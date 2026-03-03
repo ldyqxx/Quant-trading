@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  openclaw:
+    image: openclaw/openclaw:latest
+    container_name: openclaw-quant
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18789:18789"
+    env_file:
+      - .env
+    environment:
+      - OPENCLAW_API_KEY=${OPENCLAW_API_KEY}
+      - OPENCLAW_MODEL=${OPENCLAW_MODEL:-gpt-4o}
+      - EXCHANGE_API_KEY=${EXCHANGE_API_KEY}
+      - EXCHANGE_API_SECRET=${EXCHANGE_API_SECRET}
+      - EXCHANGE_NAME=${EXCHANGE_NAME:-binance}
+      - TRADING_MODE=${TRADING_MODE:-paper}
+      - RISK_LIMIT_PCT=${RISK_LIMIT_PCT:-2.0}
+      - MAX_POSITION_SIZE=${MAX_POSITION_SIZE:-1000}
+      - HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./config:/app/config:ro
+      - ./skills:/app/skills:ro
+      - ./strategies:/app/strategies:ro
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:18789/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
